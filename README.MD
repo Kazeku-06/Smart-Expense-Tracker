@@ -336,7 +336,7 @@ Dibuat dengan ❤️ oleh Asta
 
 **Contact**: 
 - Email: tssytari@gmail.com
-[GitHub Profile](https://github.com/Kazeku-06)
+- [GitHub Profile](https://github.com/Kazeku-06)
 
 ## 🙏 Acknowledgments
 
