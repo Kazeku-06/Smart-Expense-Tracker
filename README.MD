@@ -46,7 +46,7 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/smart-expense-tracker.git
+git clone https://github.com/Kazeku-06/Smart-Expense-Tracker.git
 cd smart-expense-tracker
 ```
 
