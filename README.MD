@@ -8,11 +8,6 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 ![React](https://img.shields.io/badge/React-18.2.0-61dafb)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## 🎯 Demo
-
-**Live Demo**: [Coming Soon]  
-**Screenshot Dashboard**:
-![Dashboard Preview](https://via.placeholder.com/800x400/3B82F6/FFFFFF?text=Smart+Expense+Tracker+Dashboard)
 
 ## ✨ Fitur Utama
 
