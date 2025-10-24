@@ -332,7 +332,7 @@ Distributed under MIT License. See `LICENSE` file untuk detail lengkap.
 
 ## 👨‍💻 Developer
 
-Dibuat dengan ❤️ oleh Asta
+Dibuat dengan ❤️ oleh nopalll
 
 **Contact**: 
 - Email: tssytari@gmail.com
