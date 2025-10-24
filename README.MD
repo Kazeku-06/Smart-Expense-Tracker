@@ -332,12 +332,11 @@ Distributed under MIT License. See `LICENSE` file untuk detail lengkap.
 
 ## 👨‍💻 Developer
 
-Dibuat dengan ❤️ oleh [Your Name]
+Dibuat dengan ❤️ oleh Asta
 
 **Contact**: 
-- Email: your.email@example.com
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Portfolio: [Your Portfolio](https://yourportfolio.com)
+- Email: tssytari@gmail.com
+[GitHub Profile](https://github.com/Kazeku-06)
 
 ## 🙏 Acknowledgments
 
