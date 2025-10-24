@@ -101,10 +101,14 @@ Untuk yang ingin langsung menjalankan tanpa setup manual:
 
 ```bash
 # Backend (Terminal 1)
-cd backend && pip install -r requirements.txt && python app.py
+cd backend 
+pip install -r requirements.txt
+python app.py
 
 # Frontend (Terminal 2) 
-cd frontend && npm install && npm run dev
+cd frontend
+npm install
+npm run dev
 ```
 
 Kemudian buka http://localhost:5173 di browser.
