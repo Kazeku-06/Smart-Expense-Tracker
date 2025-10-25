@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Transaction, Category
+from models import db, Transaction, Category, User
 from datetime import datetime
+from sqlalchemy import func
+from utils.currency_utils import get_cached_exchange_rate
+from routes.notification_routes import check_budget_limit
 
 transaction_bp = Blueprint('transactions', __name__)
 
@@ -56,12 +59,31 @@ def create_transaction():
         if not category:
             return jsonify({'error': 'Kategori tidak ditemukan'}), 404
         
+        # NEW - Handle currency conversion
+        user = User.query.get(user_id)
+        base_currency = user.base_currency if user else 'IDR'
+        transaction_currency = data.get('currency', base_currency)
+        
+        # Validasi currency
+        from utils.currency_utils import CurrencyConverter
+        supported_currencies = CurrencyConverter.get_supported_currencies()
+        if transaction_currency not in supported_currencies:
+            return jsonify({'error': 'Mata uang tidak didukung'}), 400
+        
+        # Set exchange rate
+        if transaction_currency == base_currency:
+            exchange_rate = 1.0
+        else:
+            exchange_rate = get_cached_exchange_rate(transaction_currency, base_currency)
+        
         # Buat transaksi baru
         transaction = Transaction(
             amount=float(data['amount']),
             description=data['description'],
             category_id=data['category_id'],
-            user_id=user_id
+            user_id=user_id,
+            currency=transaction_currency,  # NEW
+            exchange_rate=exchange_rate     # NEW
         )
         
         # Set tanggal jika disediakan
@@ -71,10 +93,16 @@ def create_transaction():
         db.session.add(transaction)
         db.session.commit()
         
-        return jsonify({
+        # NEW - Cek budget limit setelah membuat transaksi
+        budget_status = check_budget_limit(user_id, float(data['amount']) * exchange_rate)
+        
+        response_data = {
             'message': 'Transaksi berhasil dibuat',
-            'transaction': transaction.to_dict()
-        }), 201
+            'transaction': transaction.to_dict(),
+            'budget_status': budget_status  # NEW - Include budget status in response
+        }
+        
+        return jsonify(response_data), 201
         
     except Exception as e:
         db.session.rollback()
@@ -92,6 +120,27 @@ def update_transaction(transaction_id):
         transaction = Transaction.query.filter_by(id=transaction_id, user_id=user_id).first()
         if not transaction:
             return jsonify({'error': 'Transaksi tidak ditemukan'}), 404
+        
+        # NEW - Handle currency conversion jika currency diupdate
+        user = User.query.get(user_id)
+        base_currency = user.base_currency if user else 'IDR'
+        
+        if 'currency' in data:
+            transaction_currency = data['currency']
+            # Validasi currency
+            from utils.currency_utils import CurrencyConverter
+            supported_currencies = CurrencyConverter.get_supported_currencies()
+            if transaction_currency not in supported_currencies:
+                return jsonify({'error': 'Mata uang tidak didukung'}), 400
+            
+            # Update exchange rate
+            if transaction_currency == base_currency:
+                exchange_rate = 1.0
+            else:
+                exchange_rate = get_cached_exchange_rate(transaction_currency, base_currency)
+            
+            transaction.currency = transaction_currency
+            transaction.exchange_rate = exchange_rate
         
         # Update fields
         if 'amount' in data:
@@ -156,12 +205,11 @@ def get_summary():
         
         year, month_num = map(int, month.split('-'))
         
-        # Query untuk mendapatkan total pengeluaran per kategori
-        from sqlalchemy import func
+        # NEW - Query untuk mendapatkan total pengeluaran per kategori dengan konversi currency
         summary = db.session.query(
             Category.name,
             Category.color,
-            func.sum(Transaction.amount).label('total')
+            func.sum(Transaction.amount * Transaction.exchange_rate).label('total')
         ).join(Transaction).filter(
             Transaction.user_id == user_id,
             db.extract('year', Transaction.date) == year,
@@ -169,7 +217,7 @@ def get_summary():
         ).group_by(Category.name, Category.color).all()
         
         # Hitung total semua pengeluaran
-        total_expenses = sum(item.total for item in summary)
+        total_expenses = sum(item.total for item in summary) if summary else 0
         
         # Format response
         categories_summary = []
@@ -189,4 +237,57 @@ def get_summary():
         }), 200
         
     except Exception as e:
+        return jsonify({'error': f'Terjadi kesalahan: {str(e)}'}), 500
+
+# NEW - Endpoint untuk mendapatkan user profile (termasuk base currency)
+@transaction_bp.route('/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    """Endpoint untuk mendapatkan profil user termasuk base currency"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User tidak ditemukan'}), 404
+            
+        return jsonify({'user': user.to_dict()}), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Terjadi kesalahan: {str(e)}'}), 500
+
+# NEW - Endpoint untuk update user profile (base currency)
+@transaction_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    """Endpoint untuk mengupdate profil user"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User tidak ditemukan'}), 404
+        
+        # Update fields
+        if 'base_currency' in data:
+            # Validasi currency
+            from utils.currency_utils import CurrencyConverter
+            supported_currencies = CurrencyConverter.get_supported_currencies()
+            if data['base_currency'] not in supported_currencies:
+                return jsonify({'error': 'Mata uang tidak didukung'}), 400
+            user.base_currency = data['base_currency']
+        
+        if 'budget_limit' in data:
+            user.budget_limit = float(data['budget_limit'])
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Profil berhasil diupdate',
+            'user': user.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': f'Terjadi kesalahan: {str(e)}'}), 500

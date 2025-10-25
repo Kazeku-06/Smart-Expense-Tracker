@@ -8,6 +8,8 @@ from routes.category_routes import category_bp
 from routes.export_routes import export_bp  
 import os
 from dotenv import load_dotenv
+from routes.notification_routes import notification_bp
+from routes.currency_routes import currency_bp
 
 # Load environment variables
 load_dotenv()
@@ -30,7 +32,9 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(transaction_bp, url_prefix='/api')
     app.register_blueprint(category_bp, url_prefix='/api')
-    app.register_blueprint(export_bp, url_prefix='/api')  
+    app.register_blueprint(export_bp, url_prefix='/api') 
+    app.register_blueprint(notification_bp, url_prefix='/api')
+    app.register_blueprint(currency_bp, url_prefix='/api') 
     
     # Route untuk health check
     @app.route('/api/health')
