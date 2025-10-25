@@ -8,7 +8,6 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 ![React](https://img.shields.io/badge/React-18.2.0-61dafb)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-
 ## ✨ Fitur Utama
 
 - 🔐 **Autentikasi Aman** - Register & Login dengan JWT
@@ -18,7 +17,28 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 - 📱 **Responsive Design** - Tampilan optimal di desktop dan mobile
 - 🔍 **Filter Data** - Filter transaksi berdasarkan kategori dan bulan
 - 📈 **Ringkasan Bulanan** - Laporan pengeluaran per bulan
+- 📤 **Export Data** - Export ke PDF dan Excel dengan filter tanggal
 - 🎨 **UI Modern** - Design clean dengan TailwindCSS
+
+## 🆕 Fitur Export Terbaru
+
+### 📄 Export ke PDF
+- Generate laporan PDF profesional dengan ReportLab
+- Layout tabel yang rapi dan mudah dibaca
+- Include summary total pengeluaran
+- Filter berdasarkan rentang tanggal
+
+### 📊 Export ke Excel  
+- Export data ke spreadsheet Excel dengan OpenPyXL
+- Format kolom otomatis disesuaikan
+- Header dengan styling profesional
+- Mudah untuk analisa data lebih lanjut
+
+### 🎯 Cara Menggunakan Export:
+1. Buka halaman **Transactions**
+2. Atur filter tanggal (opsional)
+3. Klik tombol **"Export PDF"** atau **"Export Excel"**
+4. File akan otomatis terunduh
 
 ## 🛠️ Tech Stack
 
@@ -28,6 +48,8 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 - **Autentikasi**: JWT (Flask-JWT-Extended)
 - **CORS**: Flask-CORS untuk komunikasi dengan frontend
 - **Validation**: Werkzeug untuk password hashing
+- **PDF Export**: ReportLab
+- **Excel Export**: OpenPyXL
 
 ### Frontend
 - **Framework**: React 18 dengan Vite
@@ -139,6 +161,17 @@ Kemudian buka http://localhost:5173 di browser.
 | `PUT` | `/api/categories/:id` | Update kategori |
 | `DELETE` | `/api/categories/:id` | Hapus kategori |
 
+### 📤 Export Data
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/export/pdf` | Export data ke PDF |
+| `GET` | `/api/export/excel` | Export data ke Excel |
+| `GET` | `/api/export/debug` | Debug export functionality |
+
+**Parameters Export (optional):**
+- `start_date` - Tanggal mulai (format: YYYY-MM-DD)
+- `end_date` - Tanggal selesai (format: YYYY-MM-DD)
+
 ## 🗃️ Database Models
 
 ### User
@@ -172,12 +205,13 @@ Kemudian buka http://localhost:5173 di browser.
 - **Login** - Form login user
 - **Register** - Form registrasi user baru  
 - **Dashboard** - Ringkasan dan grafik pengeluaran
-- **Transactions** - Manajemen transaksi
+- **Transactions** - Manajemen transaksi + Export data
 
 ### Komponen
 - **Navbar** - Navigasi utama
 - **TransactionForm** - Form tambah/edit transaksi
 - **ChartCard** - Komponen grafik pie chart
+- **ExportButtons** - Tombol export PDF & Excel
 
 ## 🔧 Configuration
 
@@ -188,6 +222,12 @@ Buat file `backend/.env`:
 ```env
 JWT_SECRET_KEY=your-super-secret-jwt-key-here
 DATABASE_URL=sqlite:///db.sqlite3
+```
+
+### Dependencies Baru untuk Export
+```bash
+# Pastikan dependencies ini terinstall
+pip install reportlab==4.0.7 openpyxl==3.1.2
 ```
 
 ### Development Scripts (Frontend)
@@ -229,6 +269,15 @@ npm run lint         # ESLint checking
    npm install
    ```
 
+5. **Export errors**
+   ```bash
+   # Pastikan dependencies export terinstall
+   pip install reportlab openpyxl
+   
+   # Restart backend server
+   python app.py
+   ```
+
 ## 📱 Usage Guide
 
 ### 1. Registrasi User Baru
@@ -246,7 +295,13 @@ npm run lint         # ESLint checking
 - Lihat grafik pengeluaran per kategori
 - Filter berdasarkan bulan
 
-### 4. Kelola Kategori
+### 4. Export Data
+- Buka halaman Transactions
+- Atur filter tanggal (opsional)
+- Klik "Export PDF" atau "Export Excel"
+- File akan otomatis terunduh
+
+### 5. Kelola Kategori
 - Default kategori sudah dibuat otomatis
 - Bisa tambah kategori custom di halaman Transactions
 
@@ -289,15 +344,20 @@ Kontribusi sangat diterima! Ikuti langkah berikut:
 - Test semua endpoint API
 - Update documentation sesuai perubahan
 
-## 📋 TODO & Roadmap
+## 📋 Changelog
 
-- [ ] Export data ke PDF/Excel
-- [ ] Notifikasi budget limit
-- [ ] Multi-currency support
-- [ ] Dark mode theme
-- [ ] Mobile app (React Native)
-- [ ] Backup/restore data
-- [ ] Automated testing
+### v1.1.0 - Export Feature
+- ✅ Export data ke PDF dengan ReportLab
+- ✅ Export data ke Excel dengan OpenPyXL  
+- ✅ Filter export berdasarkan tanggal
+- ✅ Loading indicators dan error handling
+- ✅ Auto-download file
+
+### v1.0.0 - Initial Release
+- ✅ Authentication system dengan JWT
+- ✅ CRUD transactions & categories
+- ✅ Dashboard dengan grafik pie chart
+- ✅ Responsive design dengan TailwindCSS
 
 ## 🐛 Bug Reports
 
@@ -331,18 +391,19 @@ Distributed under MIT License. See `LICENSE` file untuk detail lengkap.
 
 ## 👨‍💻 Developer
 
-Dibuat dengan ❤️ oleh nopalll
+Dibuat dengan ❤️ oleh [nopalll](https://github.com/Kazeku-06)
 
 **Contact**: 
 - Email: tssytari@gmail.com
-- [GitHub Profile](https://github.com/Kazeku-06)
+- GitHub: [Kazeku-06](https://github.com/Kazeku-06)
 
 ## 🙏 Acknowledgments
 
 - Flask community untuk framework yang powerful
-- React team untuk library frontend yang amazing
+- React team untuk library frontend yang amazing  
 - TailwindCSS untuk utility-first CSS framework
 - Chart.js untuk visualisasi data yang interaktif
+- ReportLab & OpenPyXL untuk fitur export data
 
 ---
 
