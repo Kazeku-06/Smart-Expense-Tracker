@@ -166,7 +166,6 @@ Kemudian buka http://localhost:5173 di browser.
 |--------|----------|-------------|
 | `GET` | `/api/export/pdf` | Export data ke PDF |
 | `GET` | `/api/export/excel` | Export data ke Excel |
-| `GET` | `/api/export/debug` | Debug export functionality |
 
 **Parameters Export (optional):**
 - `start_date` - Tanggal mulai (format: YYYY-MM-DD)
