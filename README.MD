@@ -18,9 +18,24 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 - 🔍 **Filter Data** - Filter transaksi berdasarkan kategori dan bulan
 - 📈 **Ringkasan Bulanan** - Laporan pengeluaran per bulan
 - 📤 **Export Data** - Export ke PDF dan Excel dengan filter tanggal
+- 💸 **Budget Tracking** - Notifikasi saat pengeluaran mendekati batas budget
+- 🌍 **Multi-Currency** - Support berbagai mata uang (IDR, USD, EUR, dll.)
 - 🎨 **UI Modern** - Design clean dengan TailwindCSS
 
-## 🆕 Fitur Export Terbaru
+## 🆕 Fitur Terbaru
+
+### 💰 Budget Limit Notifications
+- Atur budget limit bulanan
+- Progress bar visual di dashboard
+- Notifikasi real-time saat pengeluaran mendekati/melampaui budget
+- Toast notifications saat membuat transaksi baru
+
+### 🌍 Multi-Currency Support
+- Support 10+ mata uang (IDR, USD, EUR, GBP, JPY, SGD, MYR, AUD, CAD, CHF)
+- Pilih mata uang saat membuat transaksi
+- Konversi otomatis ke base currency user
+- Format currency yang sesuai dengan locale
+- Tampilan simbol mata uang yang benar
 
 ### 📄 Export ke PDF
 - Generate laporan PDF profesional dengan ReportLab
@@ -34,12 +49,6 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 - Header dengan styling profesional
 - Mudah untuk analisa data lebih lanjut
 
-### 🎯 Cara Menggunakan Export:
-1. Buka halaman **Transactions**
-2. Atur filter tanggal (opsional)
-3. Klik tombol **"Export PDF"** atau **"Export Excel"**
-4. File akan otomatis terunduh
-
 ## 🛠️ Tech Stack
 
 ### Backend
@@ -50,6 +59,7 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 - **Validation**: Werkzeug untuk password hashing
 - **PDF Export**: ReportLab
 - **Excel Export**: OpenPyXL
+- **Currency API**: Frankfurter.app (free exchange rates)
 
 ### Frontend
 - **Framework**: React 18 dengan Vite
@@ -57,6 +67,7 @@ Dibuat dengan arsitektur modern untuk memudahkan pengelolaan pengeluaran pribadi
 - **Routing**: React Router DOM
 - **HTTP Client**: Axios
 - **Charts**: Chart.js dengan react-chartjs-2
+- **Notifications**: React Hot Toast
 - **Icons**: SVG dan emoji
 
 ## 📦 Installation
@@ -111,6 +122,10 @@ cd frontend
 # Install dependencies
 npm install
 
+# Setup TailwindCSS
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
 # Jalankan development server
 npm run dev
 ```
@@ -161,6 +176,21 @@ Kemudian buka http://localhost:5173 di browser.
 | `PUT` | `/api/categories/:id` | Update kategori |
 | `DELETE` | `/api/categories/:id` | Hapus kategori |
 
+### 💰 Budget & Notifications
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/notifications/budget-check` | Cek status budget |
+| `PUT` | `/api/notifications/budget-limit` | Set budget limit |
+| `GET` | `/api/notifications` | Get notifikasi |
+
+### 🌍 Currency
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/currency/supported` | Daftar mata uang yang didukung |
+| `GET` | `/api/currency/exchange-rate` | Dapatkan exchange rate |
+| `PUT` | `/api/currency/base-currency` | Set base currency user |
+| `POST` | `/api/currency/convert` | Konversi amount |
+
 ### 📤 Export Data
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -178,6 +208,8 @@ Kemudian buka http://localhost:5173 di browser.
 - `username` (String) - Unique username
 - `email` (String) - Unique email
 - `password_hash` (String) - Hashed password
+- `budget_limit` (Float) - Budget limit bulanan
+- `base_currency` (String) - Mata uang utama user
 - `created_at` (DateTime) - Timestamp
 
 ### Category
@@ -193,24 +225,36 @@ Kemudian buka http://localhost:5173 di browser.
 - `amount` (Float) - Jumlah transaksi
 - `description` (String) - Deskripsi transaksi
 - `date` (DateTime) - Tanggal transaksi
+- `currency` (String) - Mata uang transaksi
+- `exchange_rate` (Float) - Nilai tukar ke base currency
 - `user_id` (UUID) - Foreign Key to User
 - `category_id` (UUID) - Foreign Key to Category
 - `created_at` (DateTime) - Timestamp
 - `updated_at` (DateTime) - Timestamp update
+
+### BudgetNotification
+- `id` (UUID) - Primary Key
+- `user_id` (UUID) - Foreign Key to User
+- `message` (Text) - Pesan notifikasi
+- `type` (String) - Tipe notifikasi (warning, danger, info)
+- `is_read` (Boolean) - Status baca
+- `created_at` (DateTime) - Timestamp
 
 ## 🎨 UI Components
 
 ### Halaman
 - **Login** - Form login user
 - **Register** - Form registrasi user baru  
-- **Dashboard** - Ringkasan dan grafik pengeluaran
+- **Dashboard** - Ringkasan dan grafik pengeluaran + Budget tracking
 - **Transactions** - Manajemen transaksi + Export data
 
 ### Komponen
 - **Navbar** - Navigasi utama
-- **TransactionForm** - Form tambah/edit transaksi
+- **TransactionForm** - Form tambah/edit transaksi dengan currency selector
 - **ChartCard** - Komponen grafik pie chart
 - **ExportButtons** - Tombol export PDF & Excel
+- **BudgetAlert** - Komponen tracking budget dengan progress bar
+- **CurrencySelector** - Dropdown pilihan mata uang
 
 ## 🔧 Configuration
 
@@ -223,10 +267,17 @@ JWT_SECRET_KEY=your-super-secret-jwt-key-here
 DATABASE_URL=sqlite:///db.sqlite3
 ```
 
-### Dependencies Baru untuk Export
+### Dependencies Lengkap
+
+**Backend:**
 ```bash
-# Pastikan dependencies ini terinstall
-pip install reportlab==4.0.7 openpyxl==3.1.2
+pip install flask flask-sqlalchemy flask-cors flask-jwt-extended python-dotenv werkzeug reportlab openpyxl requests
+```
+
+**Frontend:**
+```bash
+npm install react react-dom react-router-dom axios chart.js react-chartjs-2 react-hot-toast
+npm install -D tailwindcss postcss autoprefixer @vitejs/plugin-react vite
 ```
 
 ### Development Scripts (Frontend)
@@ -242,7 +293,16 @@ npm run lint         # ESLint checking
 
 ### Common Issues
 
-1. **Port already in use**
+1. **Database Migration Error**
+   ```bash
+   # Hapus database lama dan buat baru
+   cd backend
+   del db.sqlite3  # Windows
+   # atau rm db.sqlite3  # Linux/Mac
+   python app.py
+   ```
+
+2. **Port already in use**
    ```bash
    # Change backend port
    python app.py --port 5001
@@ -251,31 +311,21 @@ npm run lint         # ESLint checking
    npm run dev -- --port 5174
    ```
 
-2. **CORS errors**
+3. **CORS errors**
    - Pastikan backend berjalan di port 5000
    - Check Flask-CORS configuration di app.py
 
-3. **Database errors**
-   ```bash
-   # Delete database dan buat ulang
-   rm backend/db.sqlite3
-   python backend/app.py
-   ```
-
 4. **Node modules error**
    ```bash
+   cd frontend
    rm -rf node_modules package-lock.json
    npm install
    ```
 
-5. **Export errors**
-   ```bash
-   # Pastikan dependencies export terinstall
-   pip install reportlab openpyxl
-   
-   # Restart backend server
-   python app.py
-   ```
+5. **Currency API errors**
+   - Aplikasi menggunakan Frankfurter.app (free)
+   - Jika API down, akan fallback ke rate 1.0
+   - Cache exchange rates selama 1 jam
 
 ## 📱 Usage Guide
 
@@ -284,25 +334,39 @@ npm run lint         # ESLint checking
 - Isi form registrasi
 - Sistem akan auto-login setelah registrasi
 
-### 2. Tambah Transaksi
-- Klik "Tambah Transaksi" di halaman Transactions
-- Isi amount, deskripsi, pilih kategori dan tanggal
-- Simpan transaksi
+### 2. Atur Budget & Currency
+- Buka Dashboard
+- Klik "Atur Budget" untuk set budget bulanan
+- Sistem akan otomatis memberi notifikasi
 
-### 3. Lihat Dashboard  
+### 3. Tambah Transaksi
+- Klik "Tambah Transaksi" di halaman Transactions
+- Isi amount, deskripsi, pilih kategori, mata uang, dan tanggal
+- Simpan transaksi - sistem akan beri notifikasi budget jika perlu
+
+### 4. Lihat Dashboard  
 - Buka halaman Dashboard
 - Lihat grafik pengeluaran per kategori
+- Monitor progress budget dengan progress bar
 - Filter berdasarkan bulan
 
-### 4. Export Data
+### 5. Export Data
 - Buka halaman Transactions
 - Atur filter tanggal (opsional)
 - Klik "Export PDF" atau "Export Excel"
 - File akan otomatis terunduh
 
-### 5. Kelola Kategori
+### 6. Kelola Kategori
 - Default kategori sudah dibuat otomatis
 - Bisa tambah kategori custom di halaman Transactions
+
+## 🎯 Fitur Keamanan
+
+- **Password Hashing** - Menggunakan Werkzeug security
+- **JWT Tokens** - Autentikasi stateless yang aman
+- **CORS Protection** - Konfigurasi domain yang diizinkan
+- **Input Validation** - Validasi di backend dan frontend
+- **SQL Injection Protection** - Menggunakan SQLAlchemy ORM
 
 ## 🚀 Deployment
 
@@ -344,6 +408,13 @@ Kontribusi sangat diterima! Ikuti langkah berikut:
 - Update documentation sesuai perubahan
 
 ## 📋 Changelog
+
+### v1.2.0 - Budget & Multi-Currency
+- ✅ Budget limit tracking dengan notifikasi
+- ✅ Multi-currency support (10+ mata uang)
+- ✅ Real-time exchange rates
+- ✅ Currency conversion otomatis
+- ✅ Progress bar visual di dashboard
 
 ### v1.1.0 - Export Feature
 - ✅ Export data ke PDF dengan ReportLab
@@ -403,6 +474,8 @@ Dibuat dengan ❤️ oleh [nopalll](https://github.com/Kazeku-06)
 - TailwindCSS untuk utility-first CSS framework
 - Chart.js untuk visualisasi data yang interaktif
 - ReportLab & OpenPyXL untuk fitur export data
+- Frankfurter.app untuk free exchange rates API
+- React Hot Toast untuk notifikasi yang elegant
 
 ---
 

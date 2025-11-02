@@ -16,11 +16,13 @@ const CurrencySelector = ({ value, onChange, className = '' }) => {
       setCurrencies(response.data.currencies);
     } catch (error) {
       console.error('Error fetching currencies:', error);
-      // Fallback currencies
+      // Fallback currencies jika API error
       setCurrencies({
         'IDR': { name: 'Indonesian Rupiah', symbol: 'Rp' },
         'USD': { name: 'US Dollar', symbol: '$' },
-        'EUR': { name: 'Euro', symbol: '€' }
+        'EUR': { name: 'Euro', symbol: '€' },
+        'GBP': { name: 'British Pound', symbol: '£' },
+        'JPY': { name: 'Japanese Yen', symbol: '¥' }
       });
     } finally {
       setLoading(false);
@@ -30,7 +32,7 @@ const CurrencySelector = ({ value, onChange, className = '' }) => {
   if (loading) {
     return (
       <select 
-        className={`px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
+        className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
         disabled
       >
         <option>Loading currencies...</option>
@@ -42,7 +44,7 @@ const CurrencySelector = ({ value, onChange, className = '' }) => {
     <select 
       value={value} 
       onChange={onChange}
-      className={`px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
+      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
     >
       {Object.entries(currencies).map(([code, info]) => (
         <option key={code} value={code}>

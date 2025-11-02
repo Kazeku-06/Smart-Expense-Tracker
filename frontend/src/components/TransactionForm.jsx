@@ -1,25 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import CurrencySelector from './CurrencySelector';
+import { getCurrencySymbol } from '../utils/currencyFormatter';
+import toast from 'react-hot-toast';
 
 const TransactionForm = ({ transaction, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
     category_id: '',
+    currency: 'IDR',
     date: new Date().toISOString().split('T')[0]
   });
   const [categories, setCategories] = useState([]);
+  const [userCurrency, setUserCurrency] = useState('IDR');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchCategories();
+    fetchUserProfile();
     
     if (transaction) {
       setFormData({
         amount: transaction.amount.toString(),
         description: transaction.description,
         category_id: transaction.category_id,
+        currency: transaction.currency || 'IDR',
         date: transaction.date.split('T')[0]
       });
     }
@@ -42,6 +49,24 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
     }
   };
 
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/profile');
+      const baseCurrency = response.data.user.base_currency || 'IDR';
+      setUserCurrency(baseCurrency);
+      
+      // Set default currency ke base currency user jika membuat transaksi baru
+      if (!transaction) {
+        setFormData(prev => ({
+          ...prev,
+          currency: baseCurrency
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -53,17 +78,36 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
         amount: parseFloat(formData.amount)
       };
 
+      let response;
       if (transaction) {
         // Update transaksi
-        await api.put(`/transactions/${transaction.id}`, payload);
+        response = await api.put(`/transactions/${transaction.id}`, payload);
+        toast.success('Transaksi berhasil diupdate');
       } else {
         // Buat transaksi baru
-        await api.post('/transactions', payload);
+        response = await api.post('/transactions', payload);
+        
+        // Show budget notifications if any
+        if (response.data.budget_status && response.data.budget_status.notifications) {
+          response.data.budget_status.notifications.forEach(notification => {
+            if (notification.type === 'danger') {
+              toast.error(notification.message, { duration: 6000 });
+            } else if (notification.type === 'warning') {
+              toast.warning(notification.message, { duration: 5000 });
+            } else {
+              toast.success(notification.message, { duration: 4000 });
+            }
+          });
+        } else {
+          toast.success('Transaksi berhasil dibuat');
+        }
       }
 
       onSave();
     } catch (err) {
-      setError(err.response?.data?.error || 'Terjadi kesalahan');
+      const errorMsg = err.response?.data?.error || 'Terjadi kesalahan';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -78,7 +122,7 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-md">
+      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <h2 className="text-xl font-bold mb-4">
             {transaction ? 'Edit Transaksi' : 'Tambah Transaksi'}
@@ -101,8 +145,8 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
                 name="amount"
                 value={formData.amount}
                 onChange={handleChange}
-                className="input-field"
-                placeholder="0.00"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder={`0.00 (${getCurrencySymbol(formData.currency)})`}
                 required
               />
             </div>
@@ -116,7 +160,7 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                className="input-field"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Deskripsi transaksi"
                 required
               />
@@ -130,7 +174,7 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
                 name="category_id"
                 value={formData.category_id}
                 onChange={handleChange}
-                className="input-field"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
                 <option value="">Pilih Kategori</option>
@@ -144,6 +188,24 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mata Uang
+              </label>
+              <CurrencySelector
+                value={formData.currency}
+                onChange={(e) => handleChange({ target: { name: 'currency', value: e.target.value } })}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Base currency Anda: <span className="font-medium">{userCurrency}</span>
+                {formData.currency !== userCurrency && (
+                  <span className="text-blue-600 ml-1">
+                    (akan dikonversi otomatis ke {userCurrency})
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tanggal
               </label>
               <input
@@ -151,26 +213,59 @@ const TransactionForm = ({ transaction, onSave, onCancel }) => {
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
-                className="input-field"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Ringkasan Transaksi:</h4>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div className="flex justify-between">
+                  <span>Jumlah:</span>
+                  <span className="font-medium">
+                    {getCurrencySymbol(formData.currency)} {formData.amount || '0'}
+                  </span>
+                </div>
+                {formData.currency !== userCurrency && (
+                  <div className="flex justify-between text-blue-600">
+                    <span>Konversi ke {userCurrency}:</span>
+                    <span className="font-medium">
+                      {getCurrencySymbol(userCurrency)} ...
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Kategori:</span>
+                  <span className="font-medium">
+                    {categories.find(cat => cat.id === formData.category_id)?.name || '-'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="flex space-x-3 pt-4">
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 btn-secondary"
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
                 disabled={loading}
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="flex-1 btn-primary"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
                 disabled={loading}
               >
-                {loading ? 'Menyimpan...' : 'Simpan'}
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Menyimpan...
+                  </div>
+                ) : (
+                  'Simpan'
+                )}
               </button>
             </div>
           </form>

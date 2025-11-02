@@ -24,7 +24,7 @@ def check_budget_limit(user_id, transaction_amount=0):
         ).scalar() or 0
         
         # Tambahkan transaksi baru jika ada
-        total_with_new = monthly_expenses + (transaction_amount * 1.0)  # Assume exchange rate 1 for new transaction
+        total_with_new = monthly_expenses + transaction_amount
         
         budget_limit = user.budget_limit
         percentage = (total_with_new / budget_limit) * 100 if budget_limit > 0 else 0

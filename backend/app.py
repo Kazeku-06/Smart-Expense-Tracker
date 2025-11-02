@@ -5,11 +5,11 @@ from models import db
 from routes.auth_routes import auth_bp
 from routes.transaction_routes import transaction_bp
 from routes.category_routes import category_bp
-from routes.export_routes import export_bp  
+from routes.export_routes import export_bp
+from routes.notification_routes import notification_bp  # NEW
+from routes.currency_routes import currency_bp          # NEW
 import os
 from dotenv import load_dotenv
-from routes.notification_routes import notification_bp
-from routes.currency_routes import currency_bp
 
 # Load environment variables
 load_dotenv()
@@ -26,15 +26,15 @@ def create_app():
     # Inisialisasi extensions
     db.init_app(app)
     jwt = JWTManager(app)
-    CORS(app)  
+    CORS(app)  # Enable CORS untuk semua route
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(transaction_bp, url_prefix='/api')
     app.register_blueprint(category_bp, url_prefix='/api')
-    app.register_blueprint(export_bp, url_prefix='/api') 
-    app.register_blueprint(notification_bp, url_prefix='/api')
-    app.register_blueprint(currency_bp, url_prefix='/api') 
+    app.register_blueprint(export_bp, url_prefix='/api')
+    app.register_blueprint(notification_bp, url_prefix='/api')  # NEW
+    app.register_blueprint(currency_bp, url_prefix='/api')      # NEW
     
     # Route untuk health check
     @app.route('/api/health')

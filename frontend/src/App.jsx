@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -45,6 +46,25 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
+        {/* Toast Provider */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              theme: {
+                primary: 'green',
+                secondary: 'black',
+              },
+            },
+          }}
+        />
+        
         {user && <Navbar user={user} onLogout={logout} />}
         <main className={user ? 'pt-16' : ''}>
           <Routes>
