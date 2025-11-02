@@ -6,6 +6,10 @@ from sqlalchemy import extract, func
 
 notification_bp = Blueprint('notifications', __name__)
 
+def currency_formatter(amount):
+    """Format amount ke string currency"""
+    return f"Rp {amount:,.0f}" if amount else "Rp 0"
+
 def check_budget_limit(user_id, transaction_amount=0):
     """Cek apakah pengeluaran sudah mendekati/melampaui budget limit"""
     try:
@@ -13,41 +17,39 @@ def check_budget_limit(user_id, transaction_amount=0):
         if not user or user.budget_limit <= 0:
             return None
         
-        # Hitung total pengeluaran bulan ini
         current_month = datetime.now().month
         current_year = datetime.now().year
         
-        monthly_expenses = db.session.query(func.sum(Transaction.amount * Transaction.exchange_rate)).filter(
+        monthly_expenses = db.session.query(
+            func.sum(Transaction.amount * Transaction.exchange_rate)
+        ).filter(
             Transaction.user_id == user_id,
             extract('year', Transaction.date) == current_year,
             extract('month', Transaction.date) == current_month
         ).scalar() or 0
         
-        # Tambahkan transaksi baru jika ada
         total_with_new = monthly_expenses + transaction_amount
-        
         budget_limit = user.budget_limit
         percentage = (total_with_new / budget_limit) * 100 if budget_limit > 0 else 0
         
-        # Cek kondisi notifikasi
         notifications = []
         
         if percentage >= 100:
             notifications.append({
                 'type': 'danger',
-                'message': f'⚠️ Budget terlampaui! Pengeluaran {percentage:.1f}% dari budget bulanan (Rp {total_with_new:,.0f} / Rp {budget_limit:,.0f})',
+                'message': f'⚠️ Budget terlampaui! Pengeluaran {percentage:.1f}% dari budget bulanan ({currency_formatter(total_with_new)} / {currency_formatter(budget_limit)})',
                 'percentage': percentage
             })
         elif percentage >= 90:
             notifications.append({
                 'type': 'warning', 
-                'message': f'💰 Budget hampir habis! Pengeluaran {percentage:.1f}% dari budget bulanan (Rp {total_with_new:,.0f} / Rp {budget_limit:,.0f})',
+                'message': f'💰 Budget hampir habis! Pengeluaran {percentage:.1f}% dari budget bulanan ({currency_formatter(total_with_new)} / {currency_formatter(budget_limit)})',
                 'percentage': percentage
             })
         elif percentage >= 80:
             notifications.append({
                 'type': 'info',
-                'message': f'📊 Pengeluaran {percentage:.1f}% dari budget bulanan (Rp {total_with_new:,.0f} / Rp {budget_limit:,.0f})',
+                'message': f'📊 Pengeluaran {percentage:.1f}% dari budget bulanan ({currency_formatter(total_with_new)} / {currency_formatter(budget_limit)})',
                 'percentage': percentage
             })
         
@@ -101,7 +103,6 @@ def set_budget_limit():
         user.budget_limit = float(data['budget_limit'])
         db.session.commit()
         
-        # Cek status budget setelah update
         budget_status = check_budget_limit(user_id)
         
         return jsonify({

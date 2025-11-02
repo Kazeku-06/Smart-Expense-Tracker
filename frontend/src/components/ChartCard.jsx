@@ -6,10 +6,11 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import { currencyFormatter } from '../utils/currencyFormatter';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const ChartCard = ({ summary }) => {
+const ChartCard = ({ summary, currency = 'IDR' }) => {
   if (!summary || summary.length === 0) {
     return (
       <div className="card">
@@ -46,7 +47,7 @@ const ChartCard = ({ summary }) => {
             const value = context.parsed;
             const total = context.dataset.data.reduce((a, b) => a + b, 0);
             const percentage = Math.round((value / total) * 100);
-            return `${label}: Rp ${value.toLocaleString('id-ID')} (${percentage}%)`;
+            return `${label}: ${currencyFormatter(value, currency)} (${percentage}%)`;
           }
         }
       }
@@ -55,7 +56,12 @@ const ChartCard = ({ summary }) => {
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold mb-4">Ringkasan Pengeluaran</h3>
+      <h3 className="text-lg font-semibold mb-4">
+        Ringkasan Pengeluaran per Kategori
+        <span className="text-sm font-normal text-gray-500 ml-2">
+          (dalam {currency})
+        </span>
+      </h3>
       <div className="h-80">
         <Pie data={data} options={options} />
       </div>
@@ -73,7 +79,7 @@ const ChartCard = ({ summary }) => {
             </div>
             <div className="text-right">
               <div className="text-sm font-medium">
-                Rp {item.total.toLocaleString('id-ID')}
+                {currencyFormatter(item.total, currency)}
               </div>
               <div className="text-xs text-gray-500">
                 {item.percentage}%

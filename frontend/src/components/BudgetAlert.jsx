@@ -4,12 +4,14 @@ import { currencyFormatter } from '../utils/currencyFormatter';
 
 const BudgetAlert = () => {
   const [budgetStatus, setBudgetStatus] = useState(null);
+  const [userCurrency, setUserCurrency] = useState('IDR'); // NEW
   const [loading, setLoading] = useState(true);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [budgetLimit, setBudgetLimit] = useState('');
 
   useEffect(() => {
     fetchBudgetStatus();
+    fetchUserProfile(); // NEW
   }, []);
 
   const fetchBudgetStatus = async () => {
@@ -20,6 +22,16 @@ const BudgetAlert = () => {
       console.error('Error fetching budget status:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // NEW: Fetch user profile untuk base currency
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/profile');
+      setUserCurrency(response.data.user.base_currency || 'IDR');
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
     }
   };
 
@@ -63,6 +75,9 @@ const BudgetAlert = () => {
               </h3>
               <p className="text-sm text-blue-600">
                 Tambahkan budget limit untuk mendapatkan notifikasi pengeluaran
+              </p>
+              <p className="text-xs text-blue-500 mt-1">
+                Budget dalam: <strong>{userCurrency}</strong>
               </p>
             </div>
           </div>
@@ -135,8 +150,11 @@ const BudgetAlert = () => {
                 Budget Tracking
               </h3>
               <p className={`text-sm ${config.text} opacity-80`}>
-                {currencyFormatter(current_spending)} / {currencyFormatter(budget_limit)}
+                {currencyFormatter(current_spending, userCurrency)} / {currencyFormatter(budget_limit, userCurrency)}
                 {' '}({percentage.toFixed(1)}%)
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Dalam mata uang: <strong>{userCurrency}</strong>
               </p>
             </div>
           </div>
@@ -181,18 +199,21 @@ const BudgetAlert = () => {
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">Atur Budget Bulanan</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Budget akan dihitung dalam: <strong>{userCurrency}</strong>
+              </p>
               
               <form onSubmit={handleSetBudget}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Budget Limit Bulanan
+                    Budget Limit Bulanan ({userCurrency})
                   </label>
                   <input
                     type="number"
                     value={budgetLimit}
                     onChange={(e) => setBudgetLimit(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Masukkan budget limit"
+                    placeholder={`Masukkan budget limit dalam ${userCurrency}`}
                     required
                   />
                 </div>
